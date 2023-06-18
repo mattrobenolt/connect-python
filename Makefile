@@ -1,11 +1,8 @@
 fmt:
-	python -m black run.py src
-	python -m isort run.py src
+	python -m black src
+	python -m isort src
 
 lint:
 	python -m ruff src
 
-proto:
-	buf generate -v
-
-.PHONY: fmt lint proto
+.PHONY: fmt lint
