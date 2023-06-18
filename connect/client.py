@@ -37,6 +37,25 @@ class Error(Exception):
 envelope_header_length = 5
 envelope_header_pack = ">BI"
 
+_default_connection_pool = None
+
+
+def default_connection_pool():
+    global _default_connection_pool
+    if _default_connection_pool is None:
+        import httpcore
+
+        try:
+            import h2  # noqa: F401
+
+            http2 = True
+            del h2
+        except ModuleNotFoundError:
+            http2 = False
+        _default_connection_pool = httpcore.ConnectionPool(http2=http2)
+
+    return _default_connection_pool
+
 
 def encode_envelope(*, flags: EnvelopeFlags, data):
     return encode_envelope_header(flags=flags.value, data=data) + data
@@ -77,6 +96,9 @@ class GzipCompressor:
 
 class Client:
     def __init__(self, *, pool, url, response_type, compressor=None):
+        if pool is None:
+            pool = default_connection_pool()
+
         self.pool = pool
         self.url = url
         self._response_type = response_type

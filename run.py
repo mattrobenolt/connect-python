@@ -2,8 +2,6 @@ import sys
 
 sys.path.insert(0, ".")
 
-import httpcore
-
 import connect
 from connectgen import eliza_pb2
 
@@ -11,7 +9,7 @@ ElizaServiceName = "buf.connect.demo.eliza.v1.ElizaService"
 
 
 class ElizaServiceClient:
-    def __init__(self, pool, base_url, *, compressor=None):
+    def __init__(self, base_url, *, pool=None, compressor=None):
         self._say = connect.Client(
             pool=pool,
             url=f"{base_url}/{ElizaServiceName}/Say",
@@ -32,10 +30,7 @@ class ElizaServiceClient:
         return self._introduce.call_server_stream(req)
 
 
-pool = httpcore.ConnectionPool(http2=True)
-
 eliza_client = ElizaServiceClient(
-    pool,
     "https://demo.connect.build",
     compressor=connect.GzipCompressor,
 )
