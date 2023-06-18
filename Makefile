@@ -1,8 +1,24 @@
+PY = python -m
+
+dev:
+	$(PY) pip install -r requirements-dev.txt
+
 fmt:
-	python -m black src
-	python -m isort src
+	$(PY) black src
+	$(PY) isort src
 
 lint:
-	python -m ruff src
+	$(PY) ruff src
 
-.PHONY: fmt lint
+clean:
+	rm -f bin/protoc-gen-connect-python
+	rm -rf dist
+
+upload: clean
+	$(PY) build
+	$(PY) twine upload --repository=connect-python dist/*
+
+bin/protoc-gen-connect-python: $(wildcard cmd/protoc-gen-connect-python/*.go)
+	env GOBIN=$(PWD)/bin go install go.withmatt.com/connect-python/cmd/protoc-gen-connect-python
+
+.PHONY: dev fmt lint upload clean
