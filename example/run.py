@@ -1,9 +1,14 @@
 import sys
+from pathlib import Path
 
-sys.path.insert(0, ".")
+proto_folder = Path(".") / "gen"
+
+sys.path.append(str(proto_folder.absolute()))
+
+from elizav1 import eliza_connect, eliza_pb2
+from mattv1 import matt_connect, matt_pb2
 
 import connect
-from elizav1 import eliza_connect, eliza_pb2
 
 eliza_client = eliza_connect.ElizaServiceClient(
     "https://demo.connect.build",
@@ -13,3 +18,6 @@ print(eliza_client.Say(eliza_pb2.SayRequest(sentence="hello")))
 
 for resp in eliza_client.Introduce(eliza_pb2.IntroduceRequest(name="Matt")):
     print(resp)
+
+matt_connect.MattServiceClient("")
+matt_connect.OtherServiceClient("")

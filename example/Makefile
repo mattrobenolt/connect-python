@@ -5,7 +5,10 @@ fmt:
 lint:
 	python -m ruff run.py
 
-proto:
+protoc-gen-connect-python:
+	$(MAKE) -C .. bin/protoc-gen-connect-python
+
+proto: protoc-gen-connect-python
 	buf generate -v
 
-.PHONY: fmt lint proto
+.PHONY: fmt lint proto protoc-gen-connect-python

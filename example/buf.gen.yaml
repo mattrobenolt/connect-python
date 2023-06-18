@@ -1,4 +1,7 @@
 version: v1
 plugins:
   - name: python
-    out: elizav1
+    out: gen
+  - name: connect-python
+    out: gen
+    path: ../bin/protoc-gen-connect-python

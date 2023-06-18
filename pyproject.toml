@@ -1,6 +1,6 @@
 [project]
 name = "connect-python"
-version = "0.1.0.dev1"
+version = "0.1.0.dev2"
 authors = [{ email = "matt@ydekproductions.com" }]
 description = "Client implementation for the Connect RPC protocol"
 readme = "README.md"

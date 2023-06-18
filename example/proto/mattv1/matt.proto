@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package matt.v1;
+
+import "elizav1/eliza.proto";
+
+service MattService {
+    rpc Hey(HeyRequest) returns (HeyResponse) {}
+    rpc Say(buf.connect.demo.eliza.v1.SayRequest) returns (buf.connect.demo.eliza.v1.SayResponse) {}
+}
+
+service OtherService {
+
+}
+
+message HeyRequest {}
+
+message HeyResponse{}

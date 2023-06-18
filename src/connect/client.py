@@ -190,3 +190,9 @@ class Client:
 
                     buffer = buffer[data_len:]
                     needs_header = True
+
+    def call_client_stream(self, req):
+        raise NotImplementedError("client stream not supported")
+
+    def call_bidi_stream(self, req):
+        raise NotImplementedError("bidi stream not supported")

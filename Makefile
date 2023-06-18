@@ -1,5 +1,7 @@
 PY = python -m
 
+plugin = protoc-gen-connect-python
+
 dev:
 	$(PY) pip install -r requirements-dev.txt
 
@@ -18,7 +20,10 @@ upload: clean
 	$(PY) build
 	$(PY) twine upload --repository=connect-python dist/*
 
-bin/protoc-gen-connect-python: $(wildcard cmd/protoc-gen-connect-python/*.go)
-	env GOBIN=$(PWD)/bin go install go.withmatt.com/connect-python/cmd/protoc-gen-connect-python
+
+bin/$(plugin): $(wildcard cmd/$(plugin)/*.go) pyproject.toml Makefile
+	go build -o $@ \
+	  -ldflags "-w -s" \
+	  ./cmd/$(plugin)
 
 .PHONY: dev fmt lint upload clean
