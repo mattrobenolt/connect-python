@@ -178,6 +178,8 @@ class Client:
                         data = json.loads(buffer)
                         if "error" in data:
                             raise make_error(data["error"])
+
+                        # TODO: Figure out what else might be possible
                         return
 
                     # TODO: handle server message compression

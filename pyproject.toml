@@ -1,0 +1,23 @@
+[project]
+name = "connect-python"
+version = "0.0.0"
+authors = [{ email = "matt@ydekproductions.com" }]
+dependencies = [
+  "protobuf",
+  "httpcore",
+]
+
+[project.optional-dependencies]
+http2 = ["h2"]
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 88
+
+[tool.black]
+line-length = 88
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
