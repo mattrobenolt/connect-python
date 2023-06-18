@@ -13,6 +13,10 @@ service OtherService {
 
 }
 
-message HeyRequest {}
+message HeyRequest {
+    string name = 1;
+}
 
-message HeyResponse{}
+message HeyResponse{
+    string message = 1;
+}

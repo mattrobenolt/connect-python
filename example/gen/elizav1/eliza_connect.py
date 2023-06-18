@@ -38,3 +38,20 @@ class ElizaServiceClient:
 
     def Introduce(self, req):
         return self._introduce.call_server_stream(req)
+
+
+def NewElizaServiceHandler(impl, *, prefix=""):
+    return connect.Handler({
+        f"{prefix}/{ElizaServiceName}/Say": connect.UnaryHandler(
+            impl.Say,
+            request_type=elizav1_dot_eliza__pb2.SayRequest,
+        ),
+        f"{prefix}/{ElizaServiceName}/Converse": connect.BidiStreamHandler(
+            impl.Converse,
+            request_type=elizav1_dot_eliza__pb2.ConverseRequest,
+        ),
+        f"{prefix}/{ElizaServiceName}/Introduce": connect.ServerStreamHandler(
+            impl.Introduce,
+            request_type=elizav1_dot_eliza__pb2.IntroduceRequest,
+        ),
+    })

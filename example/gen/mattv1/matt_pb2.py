@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from elizav1 import eliza_pb2 as elizav1_dot_eliza__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11mattv1/matt.proto\x12\x07matt.v1\x1a\x13\x65lizav1/eliza.proto\"\x0c\n\nHeyRequest\"\r\n\x0bHeyResponse2\x99\x01\n\x0bMattService\x12\x32\n\x03Hey\x12\x13.matt.v1.HeyRequest\x1a\x14.matt.v1.HeyResponse\"\x00\x12V\n\x03Say\x12%.buf.connect.demo.eliza.v1.SayRequest\x1a&.buf.connect.demo.eliza.v1.SayResponse\"\x00\x32\x0e\n\x0cOtherServiceb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11mattv1/matt.proto\x12\x07matt.v1\x1a\x13\x65lizav1/eliza.proto\" \n\nHeyRequest\x12\x12\n\x04name\x18\x01 \x01(\tR\x04name\"\'\n\x0bHeyResponse\x12\x18\n\x07message\x18\x01 \x01(\tR\x07message2\x99\x01\n\x0bMattService\x12\x32\n\x03Hey\x12\x13.matt.v1.HeyRequest\x1a\x14.matt.v1.HeyResponse\"\x00\x12V\n\x03Say\x12%.buf.connect.demo.eliza.v1.SayRequest\x1a&.buf.connect.demo.eliza.v1.SayResponse\"\x00\x32\x0e\n\x0cOtherServiceb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -23,11 +23,11 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _globals['_HEYREQUEST']._serialized_start=51
-  _globals['_HEYREQUEST']._serialized_end=63
-  _globals['_HEYRESPONSE']._serialized_start=65
-  _globals['_HEYRESPONSE']._serialized_end=78
-  _globals['_MATTSERVICE']._serialized_start=81
-  _globals['_MATTSERVICE']._serialized_end=234
-  _globals['_OTHERSERVICE']._serialized_start=236
-  _globals['_OTHERSERVICE']._serialized_end=250
+  _globals['_HEYREQUEST']._serialized_end=83
+  _globals['_HEYRESPONSE']._serialized_start=85
+  _globals['_HEYRESPONSE']._serialized_end=124
+  _globals['_MATTSERVICE']._serialized_start=127
+  _globals['_MATTSERVICE']._serialized_end=280
+  _globals['_OTHERSERVICE']._serialized_start=282
+  _globals['_OTHERSERVICE']._serialized_end=296
 # @@protoc_insertion_point(module_scope)

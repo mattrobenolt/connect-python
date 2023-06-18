@@ -199,6 +199,10 @@ func getServiceClient(svc *descriptor.ServiceDescriptorProto) string {
 	return svc.GetName() + "Client"
 }
 
+func getServiceHandler(svc *descriptor.ServiceDescriptorProto) string {
+	return "New" + svc.GetName() + "Handler"
+}
+
 func getServiceBasePath(file *descriptor.FileDescriptorProto, svc *descriptor.ServiceDescriptorProto) string {
 	return file.GetPackage() + "." + svc.GetName()
 }
@@ -220,22 +224,46 @@ func getMethodType(m *descriptor.MethodDescriptorProto) string {
 	}
 }
 
+func getMethodTypeHandler(m *descriptor.MethodDescriptorProto) string {
+	switch {
+	case m.GetClientStreaming() && m.GetServerStreaming():
+		return "BidiStreamHandler"
+	case m.GetClientStreaming():
+		return "ClientStreamHandler"
+	case m.GetServerStreaming():
+		return "ServerStreamHandler"
+	default:
+		return "UnaryHandler"
+	}
+}
+
 func splitPackageType(path string) (string, string) {
 	lastDot := strings.LastIndexByte(path, '.')
 	return path[:lastDot], path[lastDot+1:]
 }
 
-func resolveMessageFromMethod(gen *Plugin, m *descriptor.MethodDescriptorProto) (string, string) {
-	fullyQualifiedName := m.GetOutputType()[1:] // strip prefixed "."
+func resolveMessageFromMethod(gen *Plugin, fullyQualifiedName string) (string, string) {
+	fullyQualifiedName = fullyQualifiedName[1:] // strip prefixed "."
 	pkgName, msgName := splitPackageType(fullyQualifiedName)
 	filename := gen.filesByPackage[pkgName].GetName()
 	return filename, msgName
 }
 
 func getResponseType(gen *Plugin, m *descriptor.MethodDescriptorProto) string {
-	filename, msgName := resolveMessageFromMethod(gen, m)
+	filename, msgName := resolveMessageFromMethod(gen, m.GetOutputType())
 
 	log.Debug("ResponseType",
+		log.String("msg", msgName),
+		log.String("import", filename),
+		log.String("alias", getProtoModuleAlias(filename)),
+	)
+	return getProtoModuleAlias(filename) + "." + msgName
+}
+
+func getRequestType(gen *Plugin, m *descriptor.MethodDescriptorProto) string {
+	filename, msgName := resolveMessageFromMethod(gen, m.GetInputType())
+
+	log.Debug("RequestType",
 		log.String("msg", msgName),
 		log.String("import", filename),
 		log.String("alias", getProtoModuleAlias(filename)),
@@ -272,7 +300,9 @@ func generate(gen *Plugin, file *descriptor.FileDescriptorProto) {
 	depsUniq := make(map[string]struct{})
 	for _, svc := range file.Service {
 		for _, method := range svc.Method {
-			filename, _ := resolveMessageFromMethod(gen, method)
+			filename, _ := resolveMessageFromMethod(gen, method.GetInputType())
+			depsUniq[filename] = struct{}{}
+			filename, _ = resolveMessageFromMethod(gen, method.GetOutputType())
 			depsUniq[filename] = struct{}{}
 		}
 	}
@@ -304,23 +334,38 @@ func generate(gen *Plugin, file *descriptor.FileDescriptorProto) {
 		print(b, "    def __init__(self, base_url, *, pool=None, compressor=None, json=False):")
 		if len(svc.Method) == 0 {
 			print(b, "        pass")
-			continue
-		}
-		for _, method := range svc.Method {
-			print(b, "        self.%s = connect.Client(", getMethodProperty(method))
-			print(b, "            pool=pool,")
-			print(b, `            url=f"{base_url}/{%s}/%s",`, getServiceName(svc), method.GetName())
-			print(b, `            response_type=%s,`, getResponseType(gen, method))
-			print(b, `            compressor=compressor,`)
-			print(b, `            json=json,`)
-			print(b, "        )")
-		}
-		for _, method := range svc.Method {
-			print(b, "")
-			print(b, "    def %s(self, req):", method.GetName())
-			print(b, "        return self.%s.call_%s(req)", getMethodProperty(method), getMethodType(method))
+		} else {
+			for _, method := range svc.Method {
+				print(b, "        self.%s = connect.Client(", getMethodProperty(method))
+				print(b, "            pool=pool,")
+				print(b, `            url=f"{base_url}/{%s}/%s",`, getServiceName(svc), method.GetName())
+				print(b, `            response_type=%s,`, getResponseType(gen, method))
+				print(b, `            compressor=compressor,`)
+				print(b, `            json=json,`)
+				print(b, "        )")
+			}
+			for _, method := range svc.Method {
+				print(b, "")
+				print(b, "    def %s(self, req):", method.GetName())
+				print(b, "        return self.%s.call_%s(req)", getMethodProperty(method), getMethodType(method))
+			}
 		}
 
+		print(b, "")
+		print(b, "")
+		print(b, `def %s(impl, *, prefix=""):`, getServiceHandler(svc))
+		if len(svc.Method) == 0 {
+			print(b, "    return connect.Handler({})")
+		} else {
+			print(b, "    return connect.Handler({")
+			for _, method := range svc.Method {
+				print(b, `        f"{prefix}/{%s}/%s": connect.%s(`, getServiceName(svc), method.GetName(), getMethodTypeHandler(method))
+				print(b, "            impl.%s,", method.GetName())
+				print(b, "            request_type=%s,", getRequestType(gen, method))
+				print(b, "        ),")
+			}
+			print(b, "    })")
+		}
 	}
 
 	gen.generatedFiles = append(gen.generatedFiles, &pluginpb.CodeGeneratorResponse_File{

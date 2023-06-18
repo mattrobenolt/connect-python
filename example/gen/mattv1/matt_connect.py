@@ -32,6 +32,23 @@ class MattServiceClient:
         return self._say.call_unary(req)
 
 
+def NewMattServiceHandler(impl, *, prefix=""):
+    return connect.Handler({
+        f"{prefix}/{MattServiceName}/Hey": connect.UnaryHandler(
+            impl.Hey,
+            request_type=mattv1_dot_matt__pb2.HeyRequest,
+        ),
+        f"{prefix}/{MattServiceName}/Say": connect.UnaryHandler(
+            impl.Say,
+            request_type=elizav1_dot_eliza__pb2.SayRequest,
+        ),
+    })
+
+
 class OtherServiceClient:
     def __init__(self, base_url, *, pool=None, compressor=None, json=False):
         pass
+
+
+def NewOtherServiceHandler(impl, *, prefix=""):
+    return connect.Handler({})
