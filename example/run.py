@@ -13,6 +13,7 @@ import connect
 eliza_client = eliza_connect.ElizaServiceClient(
     "https://demo.connect.build",
     compressor=connect.GzipCompressor,
+    json=True,
 )
 print(eliza_client.Say(eliza_pb2.SayRequest(sentence="hello")))
 

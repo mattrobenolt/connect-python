@@ -3,6 +3,8 @@ import json
 import struct
 from enum import Flag, IntEnum
 
+from google.protobuf import json_format
+
 
 class EnvelopeFlags(Flag):
     compressed = 0b00000001
@@ -74,7 +76,6 @@ def error_for_response(http_resp):
     try:
         error = json.loads(http_resp.content)
     except (json.decoder.JSONDecodeError, KeyError):
-        print(http_resp.content)
         return Error(Code(http_resp.status), http_resp.reason)
     else:
         return make_error(error)
@@ -94,18 +95,47 @@ class GzipCompressor:
     compress = gzip.compress
 
 
+class JSONCodec:
+    content_type = "json"
+
+    @staticmethod
+    def encode(msg):
+        return json_format.MessageToJson(msg).encode("utf8")
+
+    @staticmethod
+    def decode(data, *, msg_type):
+        msg = msg_type()
+        json_format.Parse(data.decode("utf8"), msg)
+        return msg
+
+
+class ProtobufCodec:
+    content_type = "proto"
+
+    @staticmethod
+    def encode(msg):
+        return msg.SerializeToString()
+
+    @staticmethod
+    def decode(data, *, msg_type):
+        msg = msg_type()
+        msg.ParseFromString(data)
+        return msg
+
+
 class Client:
-    def __init__(self, *, pool, url, response_type, compressor=None):
+    def __init__(self, *, pool, url, response_type, compressor=None, json=False):
         if pool is None:
             pool = default_connection_pool()
 
         self.pool = pool
         self.url = url
+        self._codec = JSONCodec if json else ProtobufCodec
         self._response_type = response_type
         self._compressor = compressor
 
     def call_unary(self, req):
-        data = req.SerializeToString()
+        data = self._codec.encode(req)
 
         if self._compressor is not None:
             data = self._compressor.compress(data)
@@ -119,19 +149,20 @@ class Client:
                 "content-encoding": "identity"
                 if self._compressor is None
                 else self._compressor.name,
-                "content-type": "application/proto",
+                "content-type": f"application/{self._codec.content_type}",
             },
         )
 
         if http_resp.status != 200:
             raise error_for_response(http_resp)
 
-        resp = self._response_type()
-        resp.ParseFromString(http_resp.content)
-        return resp
+        return self._codec.decode(
+            http_resp.content,
+            msg_type=self._response_type,
+        )
 
     def call_server_stream(self, req):
-        data = req.SerializeToString()
+        data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
 
         if self._compressor is not None:
@@ -150,7 +181,7 @@ class Client:
                 "connect-content-encoding": "identity"
                 if self._compressor is None
                 else self._compressor.name,
-                "content-type": "application/connect+proto",
+                "content-type": f"application/connect+{self._codec.content_type}",
             },
         ) as http_resp:
             if http_resp.status != 200:
@@ -184,9 +215,10 @@ class Client:
 
                     # TODO: handle server message compression
                     # if EnvelopeFlags.compression in flags:
-                    resp = self._response_type()
-                    resp.ParseFromString(buffer)
-                    yield resp
+                    # TODO: should the client potentially use a different codec
+                    # based on response header? Or can we assume they're always
+                    # the same and an error otherwise.
+                    yield self._codec.decode(buffer, msg_type=self._response_type)
 
                     buffer = buffer[data_len:]
                     needs_header = True

@@ -9,18 +9,20 @@ OtherServiceName = "matt.v1.OtherService"
 
 
 class MattServiceClient:
-    def __init__(self, base_url, *, pool=None, compressor=None):
+    def __init__(self, base_url, *, pool=None, compressor=None, json=False):
         self._hey = connect.Client(
             pool=pool,
             url=f"{base_url}/{MattServiceName}/Hey",
             response_type=mattv1_dot_matt__pb2.HeyResponse,
             compressor=compressor,
+            json=json,
         )
         self._say = connect.Client(
             pool=pool,
             url=f"{base_url}/{MattServiceName}/Say",
             response_type=elizav1_dot_eliza__pb2.SayResponse,
             compressor=compressor,
+            json=json,
         )
 
     def Hey(self, req):
@@ -31,5 +33,5 @@ class MattServiceClient:
 
 
 class OtherServiceClient:
-    def __init__(self, base_url, *, pool=None, compressor=None):
+    def __init__(self, base_url, *, pool=None, compressor=None, json=False):
         pass

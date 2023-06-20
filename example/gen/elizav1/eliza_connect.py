@@ -7,24 +7,27 @@ ElizaServiceName = "buf.connect.demo.eliza.v1.ElizaService"
 
 
 class ElizaServiceClient:
-    def __init__(self, base_url, *, pool=None, compressor=None):
+    def __init__(self, base_url, *, pool=None, compressor=None, json=False):
         self._say = connect.Client(
             pool=pool,
             url=f"{base_url}/{ElizaServiceName}/Say",
             response_type=elizav1_dot_eliza__pb2.SayResponse,
             compressor=compressor,
+            json=json,
         )
         self._converse = connect.Client(
             pool=pool,
             url=f"{base_url}/{ElizaServiceName}/Converse",
             response_type=elizav1_dot_eliza__pb2.ConverseResponse,
             compressor=compressor,
+            json=json,
         )
         self._introduce = connect.Client(
             pool=pool,
             url=f"{base_url}/{ElizaServiceName}/Introduce",
             response_type=elizav1_dot_eliza__pb2.IntroduceResponse,
             compressor=compressor,
+            json=json,
         )
 
     def Say(self, req):
