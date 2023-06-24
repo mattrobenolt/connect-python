@@ -30,11 +30,11 @@ class ElizaServiceClient:
             json=json,
         )
 
-    def Say(self, req):
+    def say(self, req):
         return self._say.call_unary(req)
 
-    def Converse(self, req):
+    def converse(self, req):
         return self._converse.call_bidi_stream(req)
 
-    def Introduce(self, req):
+    def introduce(self, req):
         return self._introduce.call_server_stream(req)

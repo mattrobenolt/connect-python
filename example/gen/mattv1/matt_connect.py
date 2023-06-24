@@ -25,10 +25,10 @@ class MattServiceClient:
             json=json,
         )
 
-    def Hey(self, req):
+    def hey(self, req):
         return self._hey.call_unary(req)
 
-    def Say(self, req):
+    def say(self, req):
         return self._say.call_unary(req)
 
 

@@ -317,7 +317,7 @@ func generate(gen *Plugin, file *descriptor.FileDescriptorProto) {
 		}
 		for _, method := range svc.Method {
 			print(b, "")
-			print(b, "    def %s(self, req):", method.GetName())
+			print(b, "    def %s(self, req):", toSnakeCase(method.GetName()))
 			print(b, "        return self.%s.call_%s(req)", getMethodProperty(method), getMethodType(method))
 		}
 
