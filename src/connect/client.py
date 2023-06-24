@@ -124,17 +124,23 @@ class ProtobufCodec:
 
 
 class Client:
-    def __init__(self, *, pool, url, response_type, compressor=None, json=False):
+    def __init__(
+        self, *, pool, url, response_type, compressor=None, json=False, headers=None
+    ):
         if pool is None:
             pool = default_connection_pool()
+
+        if headers is None:
+            headers = {}
 
         self.pool = pool
         self.url = url
         self._codec = JSONCodec if json else ProtobufCodec
         self._response_type = response_type
         self._compressor = compressor
+        self._headers = {"user-agent": "connect-python"} | headers
 
-    def call_unary(self, req):
+    def call_unary(self, req, **opts):
         data = self._codec.encode(req)
 
         if self._compressor is not None:
@@ -144,7 +150,9 @@ class Client:
             "POST",
             self.url,
             content=data,
-            headers={
+            headers=self._headers
+            | opts.get("headers", {})
+            | {
                 "connect-protocol-version": "1",
                 "content-encoding": "identity"
                 if self._compressor is None
@@ -161,7 +169,7 @@ class Client:
             msg_type=self._response_type,
         )
 
-    def call_server_stream(self, req):
+    def call_server_stream(self, req, **opts):
         data = self._codec.encode(req)
         flags = EnvelopeFlags(0)
 
@@ -176,7 +184,9 @@ class Client:
                 flags=flags,
                 data=data,
             ),
-            headers={
+            headers=self._headers
+            | opts.get("headers", {})
+            | {
                 "connect-protocol-version": "1",
                 "connect-content-encoding": "identity"
                 if self._compressor is None
@@ -223,8 +233,8 @@ class Client:
                     buffer = buffer[data_len:]
                     needs_header = True
 
-    def call_client_stream(self, req):
+    def call_client_stream(self, req, **opts):
         raise NotImplementedError("client stream not supported")
 
-    def call_bidi_stream(self, req):
+    def call_bidi_stream(self, req, **opts):
         raise NotImplementedError("bidi stream not supported")

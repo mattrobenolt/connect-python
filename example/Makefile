@@ -1,9 +1,9 @@
 fmt:
-	python -m black run.py
-	python -m isort run.py
+	python -m black *.py
+	python -m isort *.py
 
 lint:
-	python -m ruff run.py
+	python -m ruff *.py
 
 protoc-gen-connect-python:
 	$(MAKE) -C .. bin/protoc-gen-connect-python

@@ -301,7 +301,7 @@ func generate(gen *Plugin, file *descriptor.FileDescriptorProto) {
 		print(b, "")
 		print(b, "")
 		print(b, `class %s:`, getServiceClient(svc))
-		print(b, "    def __init__(self, base_url, *, pool=None, compressor=None, json=False):")
+		print(b, "    def __init__(self, base_url, *, pool=None, compressor=None, json=False, **opts):")
 		if len(svc.Method) == 0 {
 			print(b, "        pass")
 			continue
@@ -313,12 +313,13 @@ func generate(gen *Plugin, file *descriptor.FileDescriptorProto) {
 			print(b, `            response_type=%s,`, getResponseType(gen, method))
 			print(b, `            compressor=compressor,`)
 			print(b, `            json=json,`)
+			print(b, `            **opts`)
 			print(b, "        )")
 		}
 		for _, method := range svc.Method {
 			print(b, "")
-			print(b, "    def %s(self, req):", toSnakeCase(method.GetName()))
-			print(b, "        return self.%s.call_%s(req)", getMethodProperty(method), getMethodType(method))
+			print(b, "    def %s(self, req, **opts):", toSnakeCase(method.GetName()))
+			print(b, "        return self.%s.call_%s(req, **opts)", getMethodProperty(method), getMethodType(method))
 		}
 
 	}

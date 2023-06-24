@@ -7,13 +7,14 @@ ElizaServiceName = "buf.connect.demo.eliza.v1.ElizaService"
 
 
 class ElizaServiceClient:
-    def __init__(self, base_url, *, pool=None, compressor=None, json=False):
+    def __init__(self, base_url, *, pool=None, compressor=None, json=False, **opts):
         self._say = connect.Client(
             pool=pool,
             url=f"{base_url}/{ElizaServiceName}/Say",
             response_type=elizav1_dot_eliza__pb2.SayResponse,
             compressor=compressor,
             json=json,
+            **opts
         )
         self._converse = connect.Client(
             pool=pool,
@@ -21,6 +22,7 @@ class ElizaServiceClient:
             response_type=elizav1_dot_eliza__pb2.ConverseResponse,
             compressor=compressor,
             json=json,
+            **opts
         )
         self._introduce = connect.Client(
             pool=pool,
@@ -28,13 +30,14 @@ class ElizaServiceClient:
             response_type=elizav1_dot_eliza__pb2.IntroduceResponse,
             compressor=compressor,
             json=json,
+            **opts
         )
 
-    def say(self, req):
-        return self._say.call_unary(req)
+    def say(self, req, **opts):
+        return self._say.call_unary(req, **opts)
 
-    def converse(self, req):
-        return self._converse.call_bidi_stream(req)
+    def converse(self, req, **opts):
+        return self._converse.call_bidi_stream(req, **opts)
 
-    def introduce(self, req):
-        return self._introduce.call_server_stream(req)
+    def introduce(self, req, **opts):
+        return self._introduce.call_server_stream(req, **opts)
