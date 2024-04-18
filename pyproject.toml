@@ -4,7 +4,7 @@ version = "0.1.0.dev2"
 authors = [{ email = "matt@ydekproductions.com" }]
 description = "Client implementation for the Connect RPC protocol"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -29,14 +29,6 @@ packages = ["src/connect"]
 
 [project.optional-dependencies]
 http2 = ["h2"]
-
-[tool.isort]
-atomic = true
-profile = "black"
-line_length = 88
-
-[tool.black]
-line-length = 88
 
 [build-system]
 requires = ["hatchling"]

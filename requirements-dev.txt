@@ -1,7 +1,5 @@
 -e .[http2]
 
-black
-isort
 ruff
 build
 twine

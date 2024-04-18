@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package buf.connect.demo.eliza.v1;
+package connectrpc.eliza.v1;
 
 // ElizaService provides a way to talk to the ELIZA, which is a port of
 // the DOCTOR script for Joseph Weizenbaum's original ELIZA program.

@@ -6,11 +6,10 @@ dev:
 	$(PY) pip install -r requirements-dev.txt
 
 fmt:
-	$(PY) black src
-	$(PY) isort src
+	$(PY) ruff format src
 
 lint:
-	$(PY) ruff src
+	$(PY) ruff check src
 
 clean:
 	rm -f bin/protoc-gen-connect-python

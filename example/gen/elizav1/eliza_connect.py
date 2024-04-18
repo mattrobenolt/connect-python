@@ -3,7 +3,7 @@ import connect
 
 from elizav1 import eliza_pb2 as elizav1_dot_eliza__pb2
 
-ElizaServiceName = "buf.connect.demo.eliza.v1.ElizaService"
+ElizaServiceName = "connectrpc.eliza.v1.ElizaService"
 
 
 class ElizaServiceClient:

@@ -11,7 +11,7 @@ from mattv1 import matt_connect, matt_pb2
 import connect
 
 eliza_client = eliza_connect.ElizaServiceClient(
-    "https://demo.connect.build",
+    "https://demo.connectrpc.com",
     compressor=connect.GzipCompressor,
     json=True,
 )
