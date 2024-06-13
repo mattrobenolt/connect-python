@@ -1,5 +1,9 @@
 -e .[http2]
+-e ./example
+-e ./conformance
 
+types-protobuf
 ruff
 build
+pytest
 twine

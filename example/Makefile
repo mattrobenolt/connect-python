@@ -1,5 +1,6 @@
 fmt:
 	python -m ruff format *.py
+	python -m ruff check *.py --fix --select I
 
 lint:
 	python -m ruff check *.py

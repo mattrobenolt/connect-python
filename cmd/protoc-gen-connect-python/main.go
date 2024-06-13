@@ -76,7 +76,7 @@ func run(f func(*Plugin) error) error {
 func newPlugin(req *pluginpb.CodeGeneratorRequest) (*Plugin, error) {
 	gen := &Plugin{
 		request:        req,
-		filesByPackage: make(map[string]*descriptor.FileDescriptorProto),
+		filesByPackage: make(map[string][]*descriptor.FileDescriptorProto),
 		filesByPath:    make(map[string]*descriptor.FileDescriptorProto),
 		messagesByType: make(map[string]*descriptor.DescriptorProto),
 	}
@@ -88,10 +88,14 @@ func newPlugin(req *pluginpb.CodeGeneratorRequest) (*Plugin, error) {
 			log.String("name", name),
 			log.String("pkg", pkg),
 		)
-		if _, ok := gen.filesByPackage[pkg]; ok {
-			return nil, fmt.Errorf("duplicate package: %q", name)
-		}
-		gen.filesByPackage[pkg] = f
+		gen.filesByPackage[pkg] = append(gen.filesByPackage[pkg], f)
+		// if _, ok := gen.filesByPackage[pkg]; ok {
+		// 	log.Info("duplicate package", log.String("name", pkg))
+		// 	// continue
+		// 	// return nil, fmt.Errorf("duplicate package: %q", name)
+		// } else {
+		// 	gen.filesByPackage[pkg] = f
+		// }
 		if _, ok := gen.filesByPath[name]; ok {
 			return nil, fmt.Errorf("duplicate file name: %q", name)
 		}
@@ -131,7 +135,7 @@ type Plugin struct {
 	request *pluginpb.CodeGeneratorRequest
 
 	files           []*descriptor.FileDescriptorProto
-	filesByPackage  map[string]*descriptor.FileDescriptorProto
+	filesByPackage  map[string][]*descriptor.FileDescriptorProto
 	filesByPath     map[string]*descriptor.FileDescriptorProto
 	messagesByType  map[string]*descriptor.DescriptorProto
 	filesToGenerate []*descriptor.FileDescriptorProto
@@ -142,7 +146,9 @@ type Plugin struct {
 }
 
 func (gen *Plugin) Response() *pluginpb.CodeGeneratorResponse {
-	resp := &pluginpb.CodeGeneratorResponse{}
+	resp := &pluginpb.CodeGeneratorResponse{
+		SupportedFeatures: Ptr(uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)),
+	}
 	if gen.err != nil {
 		resp.Error = Ptr(gen.err.Error())
 		return resp
@@ -228,8 +234,22 @@ func splitPackageType(path string) (string, string) {
 func resolveMessageFromMethod(gen *Plugin, m *descriptor.MethodDescriptorProto) (string, string) {
 	fullyQualifiedName := m.GetOutputType()[1:] // strip prefixed "."
 	pkgName, msgName := splitPackageType(fullyQualifiedName)
-	filename := gen.filesByPackage[pkgName].GetName()
-	return filename, msgName
+
+	log.Debug("ResolveMessageFromMethod",
+		log.String("fqn", fullyQualifiedName),
+		log.String("pkgName", pkgName),
+		log.String("msgName", msgName),
+	)
+
+	for _, file := range gen.filesByPackage[pkgName] {
+		for _, msg := range file.GetMessageType() {
+			if msg.GetName() == msgName {
+				return file.GetName(), msgName
+			}
+		}
+	}
+
+	panic(fmt.Sprintf("unknown message: %s", fullyQualifiedName))
 }
 
 func getResponseType(gen *Plugin, m *descriptor.MethodDescriptorProto) string {

@@ -15,20 +15,23 @@ dependencies = [
   "httpcore",
 ]
 
-[tool.hatch.build]
-include = [
-  "/src",
-]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/connect"]
+[project.optional-dependencies]
+http2 = ["h2"]
 
 [project.urls]
 "Homepage" = "https://github.com/mattrobenolt/connect-python"
 "Bug Tracker" = "https://github.com/mattrobenolt/connect-python/issues"
 
-[project.optional-dependencies]
-http2 = ["h2"]
+[tool.hatch.build]
+include = ["/src"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/connect"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+# include = ["src/connect"]
 
 [build-system]
 requires = ["hatchling"]

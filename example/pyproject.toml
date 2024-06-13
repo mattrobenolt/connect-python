@@ -1,0 +1,27 @@
+[project]
+name = "connect-python-example"
+version = "0.0.0-dev"
+requires-python = ">=3.12"
+dependencies = [
+  "protobuf",
+  "connect-python",
+]
+
+[tool.hatch.build]
+include = [
+  "/gen",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "gen/elizav1",
+  "gen/mattv1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pyright]
+venvPath = "../"
+venv = ".venv"
