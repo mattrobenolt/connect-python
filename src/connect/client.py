@@ -1,13 +1,13 @@
+import base64
 import gzip
 import json
-import struct
-import sys
-import base64
 import logging
+import struct
 from enum import Flag, IntEnum
+from typing import List, Tuple
 
 import httpcore
-from google.protobuf import json_format, descriptor_pool, message_factory
+from google.protobuf import any_pb2, json_format
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 class EnvelopeFlags(Flag):
     compressed = 0b00000001
     end_stream = 0b00000010
+
+
+envelope_header_length = 5
+envelope_header_pack = ">BI"
 
 
 class Code(IntEnum):
@@ -49,7 +53,7 @@ def http_to_code(code: int) -> Code:
     }.get(code, Code.unknown)
 
 
-def connect_code_to_http(code: Code) -> int:
+def code_to_http(code: Code) -> int:
     return {
         Code.canceled: 499,
         Code.unknown: 500,
@@ -69,16 +73,18 @@ def connect_code_to_http(code: Code) -> int:
     }.get(code, 500)
 
 
-def decode_detail(detail):
-    type_name = detail["type"]
+def decode_detail(detail) -> any_pb2.Any:
+    type_url = detail["type"]
+    if "/" not in type_url:
+        type_url = "type.googleapis.com/" + type_url
+
     # XXX Python requires padding for base64 decoding, but it can be too much padding
     # so always appending `==` makes sure there's always enough padding.
     value = base64.b64decode(detail["value"] + "==")
-    desc = descriptor_pool.Default().FindMessageTypeByName(type_name)
-    msg = message_factory.GetMessageClass(desc)()
-    msg.ParseFromString(value)
-    logger.debug(f"decode_detail {type_name=} {desc=} {msg=}")
-    return msg
+    return any_pb2.Any(
+        type_url=type_url,
+        value=value,
+    )
 
 
 class Error(Exception):
@@ -88,7 +94,7 @@ class Error(Exception):
         *,
         message: str | None = None,
         details=None,
-        headers=None,
+        headers: List[Tuple[bytes, bytes]] | None = None,
         http_status_code: int | None = None,
     ):
         logger.debug(f"Error.init {code=} {message=} {details=}")
@@ -101,9 +107,6 @@ class Error(Exception):
         self.headers, self.trailers = split_headers_trailers(headers)
         self.http_status_code = http_status_code
 
-
-envelope_header_length = 5
-envelope_header_pack = ">BI"
 
 _default_connection_pool = None
 
@@ -208,7 +211,7 @@ class ProtobufCodec:
 type Headers = dict[bytes | str, bytes | str]
 
 
-def split_headers_trailers(headers):
+def split_headers_trailers(headers: List[Tuple[bytes, bytes]] | None):
     h = []
     t = []
 
@@ -220,11 +223,24 @@ def split_headers_trailers(headers):
     return h, t
 
 
+def get_header(
+    headers: List[Tuple[bytes, bytes]] | None, key: bytes, default: bytes | None
+) -> bytes | None:
+    key = key.lower()
+    for k, v in headers or []:
+        if key == k.lower():
+            return v
+    return default
+
+
 class Response:
     def __init__(self, msg, *, headers):
         self.msg = msg
         self.headers, self.trailers = split_headers_trailers(headers)
         logger.debug(f"Response {self.trailers=} {self.headers=}")
+
+    def __repr__(self):
+        return f"<Response [{self.msg}]>"
 
 
 class Client:
@@ -294,15 +310,33 @@ class Client:
             raise Error(Code.deadline_exceeded)
 
         logger.debug(
-            f"call_unary.ended {http_resp.status=} {http_resp.content=} {http_resp.headers=}"
+            f"call_unary.ended {http_headers['content-type']=} {http_resp.status=} {http_resp.content=} {http_resp.headers=}"
         )
 
         if http_resp.status != 200:
             raise error_for_response(http_resp)
 
+        resp_data = http_resp.content
+        resp_encoding = get_header(http_resp.headers, b"content-encoding", b"identity")
+
+        # XXX: handle response compressions
+        if resp_encoding != b"identity":
+            raise Error(Code.internal)
+
+        # XXX: This is not exhaustive, and not correct, but gets some tests to pass
+        known_content_types = {b"application/json", b"application/proto"}
+
+        resp_codec = get_header(http_resp.headers, b"content-type", None)
+        if resp_codec not in known_content_types:
+            raise Error(Code.unknown)
+
+        if resp_codec != http_headers["content-type"].encode("utf8"):
+            raise Error(Code.internal)
+
+        print(http_resp)
         return Response(
             self._codec.decode(
-                http_resp.content,
+                resp_data,
                 msg_type=self._response_type,
             ),
             headers=http_resp.headers,

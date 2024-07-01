@@ -33,6 +33,11 @@ venvPath = "."
 venv = ".venv"
 # include = ["src/connect"]
 
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

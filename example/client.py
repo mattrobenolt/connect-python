@@ -7,12 +7,12 @@ eliza_client = eliza_connect.ElizaServiceClient(
     compressor=connect.GzipCompressor,
     json=True,
 )
-print(
-    eliza_client.say(
-        eliza_pb2.SayRequest(sentence="hello"),
-        headers={"foo": "bar", "user-agent": "hello"},
-    )
+
+resp = eliza_client.say(
+    eliza_pb2.SayRequest(sentence="hello"),
+    headers={"foo": "bar", "user-agent": "hello"},
 )
+print(resp, resp.headers, resp.trailers)
 
 for resp in eliza_client.introduce(eliza_pb2.IntroduceRequest(name="Matt")):
     print(resp)

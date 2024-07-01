@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 
+import collections
+import json
+import logging
 import re
+import ssl
 import struct
 import sys
-import logging
-import json
 import time
-import base64
-import ssl
-import collections
-from typing import Literal, List, Tuple
+from typing import Any, List, Tuple
 
 import connect
 import httpcore
-from google.protobuf import json_format, any_pb2
 from connectrpc.conformance.v1 import (
     client_compat_pb2,
     config_pb2,
     service_connect,
     service_pb2,
 )
+from google.protobuf import any_pb2, descriptor_pb2, json_format
 
 logger = logging.getLogger("conformance.runner")
 
@@ -51,7 +50,7 @@ def camelcase_to_snakecase(name: str) -> str:
     return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
 
-def log_message(request, response):
+def log_message(request: Any, response: Any):
     with open("messages.log", "a") as fp:
         json.dump(
             {
@@ -61,12 +60,6 @@ def log_message(request, response):
             },
             fp=fp,
         )
-
-
-def to_any(msg) -> any_pb2.Any:
-    any = any_pb2.Any()
-    any.Pack(msg)
-    return any
 
 
 def to_pb_headers(headers: List[Tuple[bytes, bytes]]) -> list[service_pb2.Header]:
@@ -115,15 +108,22 @@ def handle_message(
     any = msg.request_messages[0]
     logger.debug(f"{any.TypeName()=}")
 
-    if any.TypeName() != "connectrpc.conformance.v1.UnaryRequest":
+    req_types = {
+        "connectrpc.conformance.v1.UnaryRequest": service_pb2.UnaryRequest,
+        "connectrpc.conformance.v1.UnimplementedRequest": service_pb2.UnimplementedRequest,
+    }
+
+    try:
+        req_type = req_types[any.TypeName()]
+    except KeyError:
         return client_compat_pb2.ClientCompatResponse(
             test_name=msg.test_name,
             error=client_compat_pb2.ClientErrorResult(
-                message="TODO ONLY KNOW ABOUT UnaryRequest"
+                message=f"TODO unknown message type: {any.TypeName()}"
             ),
         )
 
-    req = service_pb2.UnaryRequest()
+    req = req_type()
     any.Unpack(req)
 
     http1 = msg.http_version in [
@@ -176,7 +176,7 @@ def handle_message(
                     error=service_pb2.Error(
                         code=getattr(config_pb2, f"CODE_{e.code.name.upper()}"),
                         message=e.message,
-                        details=list(map(to_any, e.details)),
+                        details=e.details,
                     ),
                     http_status_code=e.http_status_code,
                     response_headers=to_pb_headers(e.headers),

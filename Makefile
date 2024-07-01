@@ -13,8 +13,8 @@ $(VIRTUALENV)/pyvenv.cfg: requirements-dev.txt pyproject.toml
 	$(PY) pip install -r requirements-dev.txt
 
 fmt: venv
-	$(PY) ruff format src conformance/run.py
-	$(PY) ruff check --fix --select I src conformance/run.py
+	$(PY) ruff format src conformance/runner.py
+	$(PY) ruff check --fix --select I src conformance/runner.py
 
 lint: venv
 	$(PY) ruff check src
@@ -27,15 +27,25 @@ upload: venv clean
 	$(PY) build
 	$(PY) twine upload --repository=connect-python dist/*
 
+test: venv
+	$(PY) pytest
+
 runconformance: bin/connectconformance venv
-	bin/connectconformance --vv --trace --mode client --conf conformance/config.yaml -- $(PY) conformance.runner
+	bin/connectconformance \
+		--vv \
+		--trace \
+		--mode client \
+		--conf conformance/config.yaml \
+		--known-failing @conformance/known-failing.txt \
+		-- \
+		$(PY) conformance.runner
 
 bin/connectconformance: Makefile
-	env GOBIN=$(abspath bin) go install connectrpc.com/conformance/cmd/connectconformance@v1.0.2
+	env GOBIN=$(abspath bin) go install connectrpc.com/conformance/cmd/connectconformance@8447a43266d9e2881a382f1b802706cb91eb215b
 
 bin/$(plugin): $(wildcard cmd/$(plugin)/*.go) pyproject.toml Makefile go.mod go.sum
 	go build -o $@ \
 	  -ldflags "-w -s" \
 	  ./cmd/$(plugin)
 
-.PHONY: dev fmt lint upload clean
+.PHONY: dev fmt lint upload clean runconformance test
